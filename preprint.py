@@ -1,8 +1,8 @@
 import os
-import win32com.client
-import pythoncom
-from PyPDF2 import PdfReader, PdfWriter
 import shutil
+import pythoncom
+import win32com.client
+from PyPDF2 import PdfReader, PdfWriter
 
 def clear_folder(folder_path):
     """
@@ -17,7 +17,6 @@ def clear_folder(folder_path):
                 shutil.rmtree(file_path)
         except Exception as e:
             print(f"Ошибка при удалении '{file_path}': {e}")
-
 
 def convert_xlsm_to_xlsx(xlsm_file, xlsx_file):
     try:
@@ -45,7 +44,6 @@ def convert_xlsm_to_xlsx(xlsm_file, xlsx_file):
         print(f"Ошибка при обработке файла '{xlsm_file}': {e}")
     finally:
         pythoncom.CoUninitialize()
-
 
 def excel_to_pdf(excel_file, pdf_file):
     try:
@@ -103,7 +101,6 @@ def excel_to_pdf(excel_file, pdf_file):
     finally:
         pythoncom.CoUninitialize()
 
-
 def merge_pdfs(pdf_files, output_file, mode='full'):
     try:
         writer = PdfWriter()
@@ -132,7 +129,6 @@ def merge_pdfs(pdf_files, output_file, mode='full'):
     except Exception as e:
         print(f"Ошибка при объединении PDF-файлов ({mode}): {e}")
 
-
 def process_files(directory):
     excel_input_dir = os.path.join(directory, "Excel")
     print_dir = os.path.join(directory, "Print")
@@ -149,7 +145,8 @@ def process_files(directory):
     clear_folder(service_dir)
 
     pdf_files = []
-    for filename in os.listdir(excel_input_dir):
+
+    for filename in excel_input_dir:
         full_path = os.path.join(excel_input_dir, filename)
 
         if filename.endswith(".xlsm"):
@@ -170,7 +167,7 @@ def process_files(directory):
 
     pdf_files.sort()
 
-    # Переименовываем копии в корне (но не в NotSignedExport!)
+    # Переименовываем копии
     renamed_files = []
     for i, pdf_path in enumerate(pdf_files, start=1):
         base_name = os.path.basename(pdf_path)
@@ -179,13 +176,11 @@ def process_files(directory):
         renamed_files.append(new_path)
         print(f"Файл переименован и перемещён: {pdf_path} -> {new_path}")
 
-    # Создаём 3 итоговых PDF в папке Print/
+    # Итоговые объединения
     merge_pdfs(renamed_files, os.path.join(print_dir, "complete_merged.pdf"), mode='full')
     merge_pdfs(renamed_files, os.path.join(print_dir, "title_merged.pdf"), mode='title')
     merge_pdfs(renamed_files, os.path.join(print_dir, "no_title_merged.pdf"), mode='notitle')
 
-
-# Получаем путь к директории, где находится скрипт
-if __name__ == "__main__":
+def run():
     script_directory = os.path.dirname(os.path.abspath(__file__))
     process_files(script_directory)

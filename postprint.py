@@ -35,8 +35,7 @@ def process_directory_with_titles(service_dir: str, title_scan_pdf: str, output_
     на соответствующую из title_scan_pdf, сохраняет в output_dir.
     """
     if not os.path.exists(title_scan_pdf):
-        print(f"❗Файл '{title_scan_pdf}' не найден. Убедитесь, что он существует в папке 'Print'.")
-        sys.exit(1)
+        raise FileNotFoundError(f"Файл '{title_scan_pdf}' не найден. Убедитесь, что он существует в папке 'Print'.")
 
     title_reader = PdfReader(title_scan_pdf)
     scanned_pages = title_reader.pages
@@ -52,7 +51,7 @@ def process_directory_with_titles(service_dir: str, title_scan_pdf: str, output_
     for i, filename in enumerate(numbered_pdfs):
         input_path = os.path.join(service_dir, filename)
         if i >= len(scanned_pages):
-            print(f"⚠️ Нет страницы {i+1} в {title_scan_pdf}, пропущен: {filename}")
+            print(f"⚠️ Нет страницы {i + 1} в {title_scan_pdf}, пропущен: {filename}")
             continue
 
         new_first = scanned_pages[i]
@@ -62,7 +61,10 @@ def process_directory_with_titles(service_dir: str, title_scan_pdf: str, output_
         replace_first_page(input_path, new_first, output_path)
         print(f"✅ Обновлён: {filename} -> {new_name}")
 
-if __name__ == "__main__":
+def run():
+    """
+    Точка входа при вызове как модуля.
+    """
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
     service_dir = os.path.join(base_dir, "Service")
