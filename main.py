@@ -112,25 +112,40 @@ def excel_to_pdf(excel_file, pdf_file):
         # Убедимся, что COM был освобожден
         pythoncom.CoUninitialize()
 
-def merge_pdfs(pdf_files, output_file):
+def merge_pdfs(pdf_files, output_file, mode='full'):
     """
-    Объединяет несколько PDF-файлов в один.
+    Объединяет PDF-файлы в один с режимами:
+    - full: полностью
+    - title: только титульные (1-я страница)
+    - notitle: без титульных (со 2-й страницы)
     """
     try:
         writer = PdfWriter()
 
         for pdf_file in pdf_files:
             reader = PdfReader(pdf_file)
-            for page in reader.pages:
-                writer.add_page(page)
+            num_pages = len(reader.pages)
+
+            if mode == 'full':
+                pages = range(num_pages)
+            elif mode == 'title':
+                pages = [0] if num_pages > 0 else []
+            elif mode == 'notitle':
+                pages = range(1, num_pages)
+            else:
+                raise ValueError(f"Неизвестный режим объединения: {mode}")
+
+            for i in pages:
+                writer.add_page(reader.pages[i])
 
         with open(output_file, "wb") as output_pdf:
             writer.write(output_pdf)
 
-        print(f"Все PDF-файлы объединены в '{output_file}'")
+        print(f"PDF-файлы объединены в '{output_file}' (режим: {mode})")
 
     except Exception as e:
-        print(f"Ошибка при объединении PDF-файлов: {e}")
+        print(f"Ошибка при объединении PDF-файлов ({mode}): {e}")
+
 
 def process_files(directory):
     """
@@ -167,15 +182,9 @@ def process_files(directory):
         pdf_files[i - 1] = new_name
         print(f"Файл переименован: {pdf_file} -> {new_name}")
 
-
-    merge_output = os.path.join(directory, "complete_merged.pdf")
-    merge_pdfs(pdf_files, merge_output)
-
-    merge_output = os.path.join(directory, "title_merged.pdf")
-    merge_pdfs(pdf_files, merge_output)
-
-    merge_output = os.path.join(directory, "no_title_merged.pdf")
-    merge_pdfs(pdf_files, merge_output)
+    merge_pdfs(pdf_files, os.path.join(directory, "complete_merged.pdf"), mode='full')
+    merge_pdfs(pdf_files, os.path.join(directory, "title_merged.pdf"), mode='title')
+    merge_pdfs(pdf_files, os.path.join(directory, "no_title_merged.pdf"), mode='notitle')
 
 
 def process_scan(directory):
