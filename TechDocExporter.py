@@ -458,16 +458,28 @@ def process_preprint():
     конвертация XLSM в XLSX, экспорт XLSX в PDF и объединение PDF.
     """
     # Инициализация директорий
+    # Папка EXCEL_INPUT_DIR не должна очищаться
     dirs_to_create_and_clear = [
-        Config.EXCEL_INPUT_DIR, Config.PRINT_DIR,
-        Config.EXPORT_DIR, Config.SERVICE_DIR
+        Config.PRINT_DIR,
+        Config.EXPORT_DIR,
+        Config.SERVICE_DIR
     ]
+
+    # Убедимся, что EXCEL_INPUT_DIR существует, но не очищаем её
+    if not os.path.exists(Config.EXCEL_INPUT_DIR):
+        try:
+            log(f"Папка Excel не найдена: {Config.EXCEL_INPUT_DIR}. Создаю.", level="WARNING")
+            os.makedirs(Config.EXCEL_INPUT_DIR)
+        except Exception as e:
+            log(f"Ошибка при создании папки Excel: {e}. Процесс остановлен.", level="CRITICAL")
+            return
+
     for d in dirs_to_create_and_clear:
         try:
             ensure_and_clear_folder(d)
         except Exception:
-            log("Ошибка при подготовке папок. Процесс остановлен.", level="CRITICAL")
-            return  # Используем return вместо raise, так как мы в потоке
+            log(f"Ошибка при подготовке папки {os.path.basename(d)}. Процесс остановлен.", level="CRITICAL")
+            return
 
     excel_app = None
     summary = {
@@ -898,22 +910,30 @@ instruction_text = tk.Text(instruction_frame, height=12, wrap="word", bg="#fff",
                            relief="solid")
 instruction_text.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
 instruction_text.insert(tk.END, """
-1. Загрузите excel-файлы (в форматах .xlsx, .xlsm, .xls) в папку \"Excel\", которая должна находиться рядом с исполняемым файлом программы.
+1. Загрузите excel-файлы в папку "Excel".
 
-2. Нажмите \"Проверить файлы Excel\" и убедитесь, что все необходимые файлы найдены в логе ниже.
+2. Нажмите кнопку "Проверить файлы Excel" и убедитесь что все необходимые файлы найдены.
 
-3. Нажмите \"Подготовить к печати\".
-    - Программа создаст папку \"Print\" с объединенными PDF:
-        > \"complete_merged.pdf\": все листы из всех документов.
-        > \"title_merged.pdf\": только первые (титульные) листы из всех документов.
-        > \"no_title_merged.pdf\": все листы, кроме титульных.
-    - Программа также создаст папку \"NotSignedExport\", куда будут помещены отдельные PDF-файлы для каждого документа (без изменений).
+3. Нажмите кнопку "Подготовить к печати".
+    - программа создаст папку Print, в которой будут лежать PDF
+        > все файлы в одном по порядку
+        > все титульники в одном
+        > все файлы без титульников в одном
+    - программа создаст папку NotSignedExport, в которой будут все PDF по отдельности
 
-4. Распечатайте файл \"title_merged.pdf\" (титульники), получите необходимые подписи и отсканируйте его.
+4. Проверьте содержание экспортированных файлов на наличие ошибок.    
+    
+5. Распечатайте файл "title_merged" (титульники), отправьте на подпись и отсканируйте.
 
-5. Отсканированный файл переименуйте в \"title_scan.pdf\" и поместите его в папку \"Print\".
+    ====!ВАЖНО!========!ВАЖНО!========!ВАЖНО!====
+    - при сканировании убедитесь, что листы лежат в том же порядке что и при печати
+    
+6. Отсканированный файл назовите "title_scan" и положите в папку Print.
 
-6. Нажмите кнопку \"Заменить титульники\". Программа заменит первые страницы исходных документов на отсканированные титульники и поместит готовые файлы в папку \"Final\".
+    ====!ВАЖНО!========!ВАЖНО!========!ВАЖНО!====
+    - Название файла со сканами СТРОГО "title_scan"
+    
+7. Нажмите кнопку "Заменить титульники". Программа поместит результат в папку "Final".  
 """)
 instruction_text.config(state='disabled')
 instruction_frame.grid_rowconfigure(1, weight=1)
